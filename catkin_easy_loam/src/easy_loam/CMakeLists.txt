@@ -14,9 +14,9 @@ catkin_package()
 
 
 
+#odom_node节点部分
+# add_library(my_lib SHARED src/odometry/point_cloud_sub.cpp)
+# target_link_libraries(my_lib ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 
-add_library(my_lib SHARED src/odometry/point_cloud_sub.cpp)
-target_link_libraries(my_lib ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-
-add_executable(odom_node src/odometry/odom_node.cpp)
-target_link_libraries(odom_node  my_lib  ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(sensor_read_node src/odometry/sensor_read_node.cpp)
+target_link_libraries(sensor_read_node   ${catkin_LIBRARIES} ${PCL_LIBRARIES})

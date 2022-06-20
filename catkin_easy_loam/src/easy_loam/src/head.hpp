@@ -17,6 +17,7 @@ using namespace std;
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/voxel_grid.h>
 
 //字体颜色
 #define fontColorReset "\033[0m"
@@ -38,7 +39,9 @@ using namespace std;
 #define fontColorCyanBold "\033[1m\033[36m"    /* Bold Cyan */
 #define fontColorWhiteBold "\033[1m\033[37m"   /* Bold White */
 
-#define Information(info) cout <<fontColorBlueBold<< info << endl;
+// #define Information(info) cout <<fontColorBlueBold<< info << endl;
+// #define debug(info,number) cout<<fontColorRedBold<<[debug]:<<info<<
+
 
 //计时功能
 class TicToc
@@ -61,4 +64,7 @@ private:
 
 #define N_SCANS 16 //16线段
 
+#define Info(str)   cout<<fontColorBlueBold<<"[Info]:"<<str<<endl;
+#define Debug(str,num)   cout<<fontColorRed<<"[Debug]:"<<str<<" "<<num<<endl;
+ 
 #endif
