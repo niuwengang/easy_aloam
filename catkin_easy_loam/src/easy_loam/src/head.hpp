@@ -1,25 +1,36 @@
-/*
-外部头文件
-宏定义等统一调用
-*/
 #ifndef _HEAD_H
 #define _HEAD_H
 
-// c++库文件
+/*
+c++库文件
+*/
 #include "bits/stdc++.h"
 using namespace std;
 
-// ros库文件
+/*
+ros库文件
+*/
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud2.h"
+#include <ros/package.h>
 
-//pcl点云库
+/*
+pcl库文件
+*/
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 
-//字体颜色
+/* 
+easylog库
+*/
+#include "./log/easylogging++.h"
+INITIALIZE_EASYLOGGINGPP
+
+/*
+字体颜色
+*/
 #define fontColorReset "\033[0m"
 #define fontColorBlack "\033[30m"   /* Black */
 #define fontColorRed "\033[31m"     /* Red */
@@ -39,11 +50,11 @@ using namespace std;
 #define fontColorCyanBold "\033[1m\033[36m"    /* Bold Cyan */
 #define fontColorWhiteBold "\033[1m\033[37m"   /* Bold White */
 
-// #define Information(info) cout <<fontColorBlueBold<< info << endl;
-// #define debug(info,number) cout<<fontColorRedBold<<[debug]:<<info<<
 
 
-//计时功能
+/*
+计时功能
+*/
 class TicToc
 {
 public:
@@ -56,15 +67,25 @@ public:
         time_end = chrono::system_clock::now();
         return chrono::duration_cast<chrono::milliseconds>(time_end - time_start).count();
     }
-    //todo 这里其实可以重载<<直接打印
+    // todo 这里其实可以重载<<直接打印
 
 private:
     chrono::time_point<chrono::system_clock> time_start, time_end;
 };
 
-#define N_SCANS 16 //16线段
 
-#define Info(str)   cout<<fontColorBlueBold<<"[Info]:"<<str<<endl;
-#define Debug(str,num)   cout<<fontColorRed<<"[Debug]:"<<str<<" "<<num<<endl;
- 
+
+/*
+代码调试信息
+*/
+#define Info(str) cout << fontColorBlueBold << "[Info]:" << str << fontColorReset << endl;
+#define Debug(str, num) cout << fontColorGreen << "[Debug]:" << str << " " << num << fontColorReset << endl;
+#define Error(str) cout << fontColorRedBold << "[Error]:" << str << fontColorReset << endl;
+
+/*
+参数宏定义
+*/
+#define CONST_SCANS_N 16    
+#define CONST_MINIMUM_RANGE 0.3
+#define CONST_SCANS_PERIOD  0.1 
 #endif

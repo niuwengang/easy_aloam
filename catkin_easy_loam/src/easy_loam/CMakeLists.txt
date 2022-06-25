@@ -4,6 +4,7 @@ project(easy_loam)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  roslib
 )
 
 find_package(PCL REQUIRED)
@@ -14,9 +15,8 @@ catkin_package()
 
 
 
-#odom_node节点部分
-# add_library(my_lib SHARED src/odometry/point_cloud_sub.cpp)
-# target_link_libraries(my_lib ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_library(FeatureExtract SHARED src/odom/FeatureExtract.cpp)
+add_library(LOG SHARED src/log/easylogging++.cc)
 
-add_executable(sensor_read_node src/odometry/sensor_read_node.cpp)
-target_link_libraries(sensor_read_node   ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_executable(OdomNode src/odom/OdomNode.cpp)
+target_link_libraries(OdomNode  LOG FeatureExtract ${catkin_LIBRARIES} ${PCL_LIBRARIES})

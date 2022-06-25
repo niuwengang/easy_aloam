@@ -1,0 +1,12 @@
+
+catkin_easy_loam/build/
+
+catkin_easy_loam/devel/
+
+catkin_easy_loam/.vscode/
+
+catkin_easy_loam/log/
+
+catkin_easy_loam/nsh_indoor_outdoor.bag
+
+catkin_easy_loam/myeasylog.log

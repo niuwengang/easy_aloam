@@ -1,8 +1,6 @@
 ## 代码规范原则
 以odom为例：
-类外变量 odom_position odom_position_ptr  odom_position_vec
-类内变量 _odom_poistion _odom_poistion_ptr _odom_poistion_vec
-类名 odomSub ->对应初始化 odomSub_ptr
-函数名 odomCallback
-
-
+文件名、类名、函数名 OdomCompute
+类内全局变量名 _odomPosition _odomPositionVec
+普通变量 odomPosition odomPositionVec
+宏定义 CONST_SCANS_N
