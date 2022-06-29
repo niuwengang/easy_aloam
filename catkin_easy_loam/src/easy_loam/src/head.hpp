@@ -50,7 +50,12 @@ INITIALIZE_EASYLOGGINGPP
 #define fontColorCyanBold "\033[1m\033[36m"    /* Bold Cyan */
 #define fontColorWhiteBold "\033[1m\033[37m"   /* Bold White */
 
-
+/*
+参数宏定义
+*/
+#define CONST_SCANS_N  16    
+#define CONST_MINIMUM_RANGE 0.3
+#define CONST_SCANS_PERIOD  0.1 
 
 /*
 计时功能
@@ -82,10 +87,5 @@ private:
 #define Debug(str, num) cout << fontColorGreen << "[Debug]:" << str << " " << num << fontColorReset << endl;
 #define Error(str) cout << fontColorRedBold << "[Error]:" << str << fontColorReset << endl;
 
-/*
-参数宏定义
-*/
-#define CONST_SCANS_N 16    
-#define CONST_MINIMUM_RANGE 0.3
-#define CONST_SCANS_PERIOD  0.1 
+
 #endif
