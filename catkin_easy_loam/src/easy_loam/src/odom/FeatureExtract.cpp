@@ -11,9 +11,10 @@ FeatureExtract::FeatureExtract(
 {
     _pointCloud_subscriber = nh.subscribe("/velodyne_points", 1, &FeatureExtract::PointCloudCallback, this); //可从rosbag中读取点云信息
     _pointCloud_publisher = nh.advertise<sensor_msgs::PointCloud2>("/pointCloud", 100);
-    // for (int index = 0; index < CONST_SCANS_N; index++)
-    //     _pointCloudScansVec_publisher[index] = nh.advertise<sensor_msgs::PointCloud2>(string("/laserCloudScansVec_") + to_string(index), 100);
     _cornerPointsSharp_publisher = nh.advertise<sensor_msgs::PointCloud2>("/cornerPointsSharp", 100);
+    _cornerPointsLessSharp_publisher = nh.advertise<sensor_msgs::PointCloud2>("/cornerPointsLessSharp", 100);
+    _surfPointsFlat_publisher = nh.advertise<sensor_msgs::PointCloud2>("/surfPointsFlat", 100);
+    _surfPointsLessFlat_publisher = nh.advertise<sensor_msgs::PointCloud2>("/surfPointsLessFlat", 100);
 }
 
 /**
@@ -28,7 +29,6 @@ void FeatureExtract::RemoveClosedPointCloud(const pcl::PointCloud<pcl::PointXYZ>
 {
 
     //根据输入调整下输出的格式
-    // question? 这里的&写法是为什么
     if (&cloudIn != &cloudOut)
     {
         cloudOut.header = cloudIn.header;
@@ -58,8 +58,8 @@ void FeatureExtract::RemoveClosedPointCloud(const pcl::PointCloud<pcl::PointXYZ>
 
 /**
  * @brief 特征点提取回调函数
- * @param
- * @return
+ * @param msg
+ * @return 原始的点云信息
  * @note
  */
 void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
@@ -71,6 +71,10 @@ void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
     {
         _laserCloudScansVec[index].clear();
     }
+    _cornerPointsSharp.clear();
+    _cornerPointsLessSharp.clear();
+    _surfPointsFlat.clear();
+    _surfPointsLessFlat.clear();
 
     /*加变量锁*/
     _buff_mutex.lock();
@@ -94,12 +98,6 @@ void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
     float endOri = -atan2(_laserCloud.points[_laserCloud.points.size() - 1].y, _laserCloud.points[_laserCloud.points.size() - 1].x) + 2 * M_PI;
 
     endOri += endOri - startOri > 3 * M_PI ? -2 * M_PI : (endOri - startOri < 1 * M_PI ? 2 * M_PI : 0);
-
-    /*>>>>>>>>>>>>>>测试点1>>>>>>>>>>>>>*/
-    LOG(TRACE) << endl;
-    LOG(TRACE) << "起始角度" << fontColorRed << startOri * 180 / M_PI;
-    LOG(TRACE) << "终止角度" << fontColorRed << endOri * 180 / M_PI;
-    /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
 
     /* 根据pitch角归类点云所在scanID+过圈处理+对点云打上相对时间戳*/
     int count = _laserCloud.points.size();
@@ -140,9 +138,7 @@ void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
             currentOri += 2 * M_PI;
             currentOri += currentOri - endOri < -M_PI * 3 / 2 ? 2 * M_PI : (currentOri - endOri > M_PI / 2 ? -2 * M_PI : 0);
         }
-        /*>>>>>>>>>>>>>>测试点2>>>>>>>>>>>>>*/
-        // LOG(TRACE) << "当前角度" << currentOri*180/M_PI;
-        /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>*/
+
         float relativeTime = (currentOri - startOri) / (endOri - startOri);
 
         pointTemp.intensity = scanID + CONST_SCANS_PERIOD * relativeTime;
@@ -176,7 +172,6 @@ void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
     _cornerPointsLessSharp.clear();
     _surfPointsFlat.clear();
     _surfPointsLessFlat.clear();
-
 
     for (int i = 0; i < CONST_SCANS_N; i++)
     {
@@ -246,18 +241,76 @@ void FeatureExtract::PointCloudCallback(const sensor_msgs::PointCloud2Ptr &msg)
                     }
                 }
             }
+            /***2.提取平面点***/
+            int smallestPickedNum = 0;
+            for (int k = startPoint; k <= endPoint; k++)
+            {
+                int indexReal = cloudTag[k].cloudSortInd;
+                if (cloudTag[indexReal].cloudNeighborPicked == 0 && cloudTag[indexReal].cloudCurvature < 0.1)
+                {
+                    cloudTag[indexReal].cloudLabel = -1;
+                    _surfPointsFlat.push_back(laserCloud->points[indexReal]);
+
+                    smallestPickedNum++;
+                    if (smallestPickedNum >= 4)
+                    {
+                        break;
+                    }
+                    /****标记一下选中点****/
+                    cloudTag[indexReal].cloudNeighborPicked = 1;
+                    /****避免角点过于集中 先向右找****/
+                    for (int l = 1; l <= 5; l++)
+                    {
+                        float diffX = laserCloud->points[indexReal + l].x - laserCloud->points[indexReal + l - 1].x;
+                        float diffY = laserCloud->points[indexReal + l].y - laserCloud->points[indexReal + l - 1].y;
+                        float diffZ = laserCloud->points[indexReal + l].z - laserCloud->points[indexReal + l - 1].z;
+                        if (pow(diffX, 2) + pow(diffY, 2) + pow(diffZ, 2) > 0.05)
+                        {
+                            break;
+                        }
+                        cloudTag[indexReal + l].cloudNeighborPicked = 1;
+                    }
+                    /****避免角点过于集中 再向左找****/
+                    for (int l = -1; l >= -5; l--)
+                    {
+                        float diffX = laserCloud->points[indexReal + l].x - laserCloud->points[indexReal + l + 1].x;
+                        float diffY = laserCloud->points[indexReal + l].y - laserCloud->points[indexReal + l + 1].y;
+                        float diffZ = laserCloud->points[indexReal + l].z - laserCloud->points[indexReal + l + 1].z;
+                        if (pow(diffX, 2) + pow(diffY, 2) + pow(diffZ, 2) > 0.05)
+                        {
+                            break;
+                        }
+                        cloudTag[indexReal + l].cloudNeighborPicked = 1;
+                    }
+                }
+            }
+
+            /***3.提取剩余点***/
+            for (int k = startPoint; k <= endPoint; k++)
+            {
+                if (cloudTag[k].cloudLabel <= 0)
+                {
+                    surfPointsLessFlatScan->push_back(laserCloud->points[k]);
+                }
+            }
         }
+        /**滤波**/
+        pcl::PointCloud<pcl::PointXYZI> surfPointsLessFlatScanFiltered;
+        pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
+        downSizeFilter.setInputCloud(surfPointsLessFlatScan);  //输入滤波对象
+        downSizeFilter.setLeafSize(0.2, 0.2, 0.2);             //设置滤波体素
+        downSizeFilter.filter(surfPointsLessFlatScanFiltered); //输出滤波结果
+        _surfPointsLessFlat += surfPointsLessFlatScanFiltered; //归于集合
     }
-            /*点云发布*/
+    /*点云发布*/
     PointCloudPub(*laserCloud, msg, _pointCloud_publisher);
     PointCloudPub(_cornerPointsSharp, msg, _cornerPointsSharp_publisher);
+    PointCloudPub(_cornerPointsLessSharp, msg, _cornerPointsLessSharp_publisher);
+    PointCloudPub(_surfPointsFlat, msg, _surfPointsFlat_publisher);
+    PointCloudPub(_surfPointsLessFlat, msg, _surfPointsLessFlat_publisher);
 
     _buff_mutex.unlock();
 }
-
-    
-
-
 
 template <typename PointT>
 void FeatureExtract::PointCloudPub(pcl::PointCloud<PointT> &pointcloud, const sensor_msgs::PointCloud2Ptr &msg, ros::Publisher &pub)
@@ -268,65 +321,3 @@ void FeatureExtract::PointCloudPub(pcl::PointCloud<PointT> &pointcloud, const se
     pointcloudMsg.header.frame_id = "/velodyne";
     pub.publish(pointcloudMsg);
 }
-
-
-            // /***2.提取平面点***/
-            // int smallestPickedNum = 0;
-            // for (int k = startPoint; k <= endPoint; k++)
-            // {
-            //     int indexReal = cloudTag[i].cloudSortInd;
-            //     if (cloudTag[indexReal].cloudNeighborPicked == 0 && cloudTag[indexReal].cloudCurvature < 0.1)
-            //     {
-            //         cloudTag[indexReal].cloudLabel = -1;
-            //         _surfPointsFlat.push_back(laserCloud->points[indexReal]);
-
-            //         smallestPickedNum++;
-            //         if (smallestPickedNum >= 4)
-            //         {
-            //             break;
-            //         }
-            //         /****标记一下选中点****/
-            //         cloudTag[indexReal].cloudNeighborPicked = 1;
-            //         /****避免角点过于集中 先向右找****/
-            //         for (int l = 1; l <= 5; l++)
-            //         {
-            //             float diffX = laserCloud->points[indexReal + l].x - laserCloud->points[indexReal + l - 1].x;
-            //             float diffY = laserCloud->points[indexReal + l].y - laserCloud->points[indexReal + l - 1].y;
-            //             float diffZ = laserCloud->points[indexReal + l].z - laserCloud->points[indexReal + l - 1].z;
-            //             if (pow(diffX, 2) + pow(diffY, 2) + pow(diffZ, 2) > 0.05)
-            //             {
-            //                 break;
-            //             }
-            //             cloudTag[indexReal + l].cloudNeighborPicked = 1;
-            //         }
-            //         /****避免角点过于集中 再向左找****/
-            //         for (int l = -1; l >= -5; l--)
-            //         {
-            //             float diffX = laserCloud->points[indexReal + l].x - laserCloud->points[indexReal + l + 1].x;
-            //             float diffY = laserCloud->points[indexReal + l].y - laserCloud->points[indexReal + l + 1].y;
-            //             float diffZ = laserCloud->points[indexReal + l].z - laserCloud->points[indexReal + l + 1].z;
-            //             if (pow(diffX, 2) + pow(diffY, 2) + pow(diffZ, 2) > 0.05)
-            //             {
-            //                 break;
-            //             }
-            //             cloudTag[indexReal + l].cloudNeighborPicked = 1;
-            //         }
-            //     }
-            // }
-
-            // /***3.提取剩余点***/
-            // for (int k = startPoint; k <= endPoint; k++)
-            // {
-            //     if (cloudTag[k].cloudLabel <= 0)
-            //     {
-            //         surfPointsLessFlatScan->push_back(laserCloud->points[k]);
-            //     }
-            // }
-        
-        // /**滤波**/
-        // pcl::PointCloud<pcl::PointXYZI> surfPointsLessFlatScanFiltered;
-        // pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
-        // downSizeFilter.setInputCloud(surfPointsLessFlatScan);  //输入滤波对象
-        // downSizeFilter.setLeafSize(0.2, 0.2, 0.2);             //设置滤波体素
-        // downSizeFilter.filter(surfPointsLessFlatScanFiltered); //输出滤波结果
-        // _surfPointsLessFlat += surfPointsLessFlatScanFiltered; //归于集合

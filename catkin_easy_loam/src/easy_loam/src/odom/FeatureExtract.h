@@ -1,4 +1,4 @@
-#include "../head.hpp"
+#include "../head.h"
 
    struct cloudTagType
     {
@@ -37,6 +37,4 @@ private:
     pcl::PointCloud<pcl::PointXYZI> _cornerPointsLessSharp;
     pcl::PointCloud<pcl::PointXYZI> _surfPointsFlat;
     pcl::PointCloud<pcl::PointXYZI> _surfPointsLessFlat;
-
- 
 };

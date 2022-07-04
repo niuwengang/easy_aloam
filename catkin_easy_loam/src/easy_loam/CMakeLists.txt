@@ -14,9 +14,9 @@ include_directories(${catkin_INCLUDE_DIRS} 	${PCL_INCLUDE_DIRS})
 catkin_package()
 
 
-
-add_library(FeatureExtract SHARED src/odom/FeatureExtract.cpp)
 add_library(LOG SHARED src/log/easylogging++.cc)
 
-add_executable(OdomNode src/odom/OdomNode.cpp)
-target_link_libraries(OdomNode  LOG FeatureExtract ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+add_library(FeatureExtract SHARED src/odom/FeatureExtract.cpp)
+
+add_executable(FeatureExtractNode src/odom/FeatureExtractNode.cpp)
+target_link_libraries(FeatureExtractNode  LOG FeatureExtract ${catkin_LIBRARIES} ${PCL_LIBRARIES})
