@@ -23,6 +23,7 @@ private:
 
 private:
     std::mutex _buff_mutex;                                  //变量锁
+
     ros::Subscriber _pointCloud_subscriber;                  //点云订阅器
     ros::Publisher _pointCloud_publisher;                    //总体点云发布器
     array<ros::Publisher, 16> _pointCloudScansVec_publisher; //每线点云发布器

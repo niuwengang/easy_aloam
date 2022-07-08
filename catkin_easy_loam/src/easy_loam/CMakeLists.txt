@@ -16,7 +16,12 @@ catkin_package()
 
 add_library(LOG SHARED src/log/easylogging++.cc)
 
-add_library(FeatureExtract SHARED src/odom/FeatureExtract.cpp)
 
+add_library(FeatureExtract SHARED src/odom/FeatureExtract.cpp)
 add_executable(FeatureExtractNode src/odom/FeatureExtractNode.cpp)
 target_link_libraries(FeatureExtractNode  LOG FeatureExtract ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+
+add_library(OdomCompute SHARED src/odom/OdomCompute.cpp)
+add_executable(OdomComputeNode src/odom/OdomComputeNode.cpp)
+target_link_libraries(OdomComputeNode  LOG OdomCompute ${catkin_LIBRARIES} ${PCL_LIBRARIES})

@@ -10,11 +10,12 @@ FeatureExtract::FeatureExtract(
     ros::NodeHandle &nh)
 {
     _pointCloud_subscriber = nh.subscribe("/velodyne_points", 1, &FeatureExtract::PointCloudCallback, this); //可从rosbag中读取点云信息
-    _pointCloud_publisher = nh.advertise<sensor_msgs::PointCloud2>("/pointCloud", 100);
+    
     _cornerPointsSharp_publisher = nh.advertise<sensor_msgs::PointCloud2>("/cornerPointsSharp", 100);
     _cornerPointsLessSharp_publisher = nh.advertise<sensor_msgs::PointCloud2>("/cornerPointsLessSharp", 100);
     _surfPointsFlat_publisher = nh.advertise<sensor_msgs::PointCloud2>("/surfPointsFlat", 100);
     _surfPointsLessFlat_publisher = nh.advertise<sensor_msgs::PointCloud2>("/surfPointsLessFlat", 100);
+    _pointCloud_publisher= nh.advertise<sensor_msgs::PointCloud2>("/pointCloud_2", 100);
 }
 
 /**
